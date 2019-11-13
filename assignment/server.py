@@ -14,7 +14,8 @@ import datetime as dt
 serverPort = 12000
 t_lock=threading.Condition()
 # will store clients info in this list
-clients=[]
+clients = []
+client_info = ['yoda']
 # would communicate with clients after every second
 UPDATE_INTERVAL= 1
 timeout=False
@@ -22,37 +23,46 @@ timeout=False
 
 def recv_handler():
     global t_lock
-    global clients
     global clientSocket
     global serverSocket
     print('Server is ready for service')
-    while(1):
-        
+
+    while True:
         data, clientAddress = serverSocket.recvfrom(2048)
         # received data from the client, now we know who we are talking with
-        username = message.decode()
+        username = data.decode()
         # get lock as we might me accessing some shared data structures
         with t_lock:
             currtime = dt.datetime.now()
             date_time = currtime.strftime("%d/%m/%Y, %H:%M:%S")
-            print('Received request from', , username, clientAddress[0], 'listening at', clientAddress[1], ':',  'at time ', date_time)
-            if username in:
-                # store client information (IP and Port No) in list
-                clients.append(clientAddress)
-                serverMessage="Subscription successfull"
-            elif(message=='Unsubscribe'):
-                # check if client already subscribed or not
-                if(clientAddress in clients):
-                    clients.remove(clientAddress)
-                    serverMessage="Subscription removed"
-                else:
-                    serverMessage="You are not currently subscribed"
-            else:
-                serverMessage="Unknown command, send Subscribe or Unsubscribe only"
+            print('Received request from', username, clientAddress[0], 'listening at', clientAddress[1], ':',  'at time ', date_time)
+            
+            serverMessage = "SUCCESS" if username in client_info else "Invalid Password. Please try again"
+
             # send message to the client
             serverSocket.sendto(serverMessage.encode(), clientAddress)
             # notify the thread waiting
             t_lock.notify()
+
+            if serverMessage == "SUCCESS":
+                break
+
+    while True:
+        data, clientAddress = serverSocket.recvfrom(2048)
+        # received data from the client, now we know who we are talking with
+        password = data.decode()
+        # get lock as we might me accessing some shared data structures
+        with t_lock:
+            
+            serverMessage = "SUCCESS" if password == client_info[username] else "Invalid Password. Please try again"
+
+            # send message to the client
+            serverSocket.sendto(serverMessage.encode(), clientAddress)
+            # notify the thread waiting
+            t_lock.notify()
+
+            if serverMessage == "SUCCESS":
+                break
 
 
 def send_handler():
