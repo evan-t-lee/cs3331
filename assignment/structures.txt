@@ -1,0 +1,22 @@
+clients = {
+    client1: {
+        time_logged_in: float,
+        last_active: bool,
+        blocked: [client2]
+    },
+    client2: {
+        time_logged_in: float,
+        last_active: bool,
+        blocked: []
+    },
+    ...
+}
+
+offline_messages = {
+    client1: [messages]
+}
+
+def timeout():
+    inactive = [client for client in clients if is_inactive(client)]
+    for client in inactive:
+        logout(client)
