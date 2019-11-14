@@ -7,7 +7,7 @@
 from socket import *
 import sys
 
-import auth as auth
+import client_auth as auth
 
 # Server would be running on the same host as Client
 serverName = sys.argv[1]
@@ -17,11 +17,20 @@ clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
 if not auth.username(clientSocket, (serverName, serverPort)):
+    clientSocket.close()
     exit()
 if not auth.password(clientSocket, (serverName, serverPort)):
+    clientSocket.close()
     exit()
 
-print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-# prepare to exit. Send Unsubscribe message to server
+while True:
+    command = input('> ')
+    data, address = socket.recvfrom(2048)
+    data = data.decode()
+    status, message = data.split(':')
+    print(message)
+    if command == 'exit':
+        break
+
 clientSocket.close()
 # Close the socket

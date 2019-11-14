@@ -20,3 +20,12 @@ def timeout():
     inactive = [client for client in clients if is_inactive(client)]
     for client in inactive:
         logout(client)
+
+active_clients
+
+status_codes:
+    10: valid username
+    11: valid authentication
+    20: invalid username
+    21: invalid authentication
+    30: blocked user
