@@ -7,45 +7,21 @@
 from socket import *
 import sys
 
+import auth as auth
+
 # Server would be running on the same host as Client
 serverName = sys.argv[1]
 serverPort = int(sys.argv[2])
 
-clientSocket = socket(AF_INET, SOCK_DGRAM)
+clientSocket = socket(AF_INET, SOCK_STREAM)
+clientSocket.connect((serverName, serverPort))
 
-while True:
-    username = input("Username: ")
-
-    clientSocket.sendto(username.encode(),(serverName, serverPort))
-    # wait for the reply from the server
-    receivedMessage, serverAddress = clientSocket.recvfrom(2048)
-    receivedMessage = receivedMessage.decode()
-    if receivedMessage == 'SUCCESS':
-        break
-        # # Wait for 10 back to back messages from server
-        # for i in range(10):
-        #     receivedMessage, serverAddress = clientSocket.recvfrom(2048)
-        #     print(receivedMessage.decode())
-    print(receivedMessage)
-
-while True:
-    password = input("Password: ")
-
-    clientSocket.sendto(password.encode(),(serverName, serverPort))
-    # wait for the reply from the server
-    receivedMessage, serverAddress = clientSocket.recvfrom(2048)
-    receivedMessage = receivedMessage.decode()
-    if receivedMessage == 'SUCCESS':
-        break
-        # # Wait for 10 back to back messages from server
-        # for i in range(10):
-        #     receivedMessage, serverAddress = clientSocket.recvfrom(2048)
-        #     print(receivedMessage.decode())
-    print(receivedMessage)
+if not auth.username(clientSocket, (serverName, serverPort)):
+    exit()
+if not auth.password(clientSocket, (serverName, serverPort)):
+    exit()
 
 print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
 # prepare to exit. Send Unsubscribe message to server
-message='Unsubscribe'
-clientSocket.sendto(message.encode(),(serverName, serverPort))
 clientSocket.close()
 # Close the socket
