@@ -7,12 +7,12 @@ def username(socket, receiver):
         data, address = socket.recvfrom(2048)
         data = data.decode()
         status, message = data.split(':')
-        if status == 'status 10':
+        if status == 'status 20':
             return True
 
         print(message)
 
-        if status == 'status 30':
+        if status == 'status 40':
             return False
 
 def password(socket, receiver):
@@ -24,10 +24,10 @@ def password(socket, receiver):
         data, address = socket.recvfrom(2048)
         data = data.decode()
         status, message = data.split(':')
-        if status == 'status 11':
+        if status == 'status 21':
             return True
 
         print(message)
 
-        if status == 'status 30':
+        if status == 'status 40':
             return False

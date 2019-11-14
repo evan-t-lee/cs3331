@@ -24,13 +24,13 @@ if not auth.password(clientSocket, (serverName, serverPort)):
     exit()
 
 while True:
-    command = input('> ')
-    data, address = socket.recvfrom(2048)
+    # command = input('> ')
+    data, address = clientSocket.recvfrom(2048)
     data = data.decode()
     status, message = data.split(':')
     print(message)
-    if command == 'exit':
-        break
+    # if command == 'exit':
+    #     break
 
 clientSocket.close()
 # Close the socket

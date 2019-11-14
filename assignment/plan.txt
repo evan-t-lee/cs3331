@@ -1,19 +1,24 @@
-clients = {
-    client1: {
-        time_logged_in: float,
-        last_active: bool,
-        blocked: [client2]
+# only logged in clients
+users = {
+    user1: {
+        mail: [],
+        blocked: [client2],
+        is_blocked: bool
     },
-    client2: {
-        time_logged_in: float,
-        last_active: bool,
+    user2: {
+        mail: [],
         blocked: []
+        is_blocked: bool
     },
     ...
 }
 
-offline_messages = {
-    client1: [messages]
+online_users = {
+    user1: {
+        socket: socket,
+        time_logged_in: float,
+        last_active: bool,
+    }
 }
 
 def timeout():
@@ -24,8 +29,9 @@ def timeout():
 active_clients
 
 status_codes:
-    10: valid username
-    11: valid authentication
-    20: invalid username
-    21: invalid authentication
-    30: blocked user
+    10: ok
+    20: valid username
+    21: valid authentication
+    30: invalid username
+    31: invalid authentication
+    40: blocked user
