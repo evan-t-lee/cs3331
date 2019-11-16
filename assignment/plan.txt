@@ -31,7 +31,8 @@ active_clients
 status_codes:
     10: ok
     20: valid username
-    21: valid authentication
+    21: login
+    22: logout
     30: invalid username
     31: invalid authentication
     40: blocked user

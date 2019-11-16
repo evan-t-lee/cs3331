@@ -3,7 +3,7 @@ import time
 import settings
 import server_commands as command
 
-def username(conn, address):
+def username(conn):
     while True:
         # received data from the client, now we know who we are talking with
         username = conn.recv(2048).decode()
@@ -28,7 +28,7 @@ def username(conn, address):
             if data.startswith('status 40'):
                 return False
 
-def password(conn, address, username):
+def password(conn, username):
     for attempts in range(3):
         # received data from the client, now we know who we are talking with
         password = conn.recv(2048).decode()

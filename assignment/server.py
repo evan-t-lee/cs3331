@@ -14,7 +14,7 @@ def recv_handler():
     print('Server is ready for service')
 
     while True:
-        conn, address = settings.serverSocket.accept()
+        conn, address = settings.recv_socket.accept()
         conn_thread = threading.Thread(name='connection', target=conn_handler, args=(conn, address))
         conn_thread.start()
 
@@ -34,20 +34,30 @@ def send_handler():
             # # notify other thread
             settings.t_lock.notify()
         # sleep for UPDATE_INTERVAL
-        time.sleep(settings.UPDATE_INTERVAL)
+        # time.sleep(settings.UPDATE_INTERVAL)
 
 def conn_handler(conn, address):
-    username = auth.username(conn, address)
+    username = auth.username(conn)
     if not username:
         return
-    if not auth.password(conn, address, username):
+    if not auth.password(conn, username):
         return
-    # cmd_handler(conn)
+    cmd_handler(conn, username)
 
-# def cmd_handler(conn):
-#     while True:
-#         cmd = conn.recv(2048).decode()
-#         with settings.t_lock:
+def cmd_handler(conn, username):
+    while True:
+        cmd = conn.recv(2048).decode()
+        if not cmd:
+            return
+
+        if cmd == 'logout':
+            command.logout(username)
+            print('logging out!')
+            return
+
+        with settings.t_lock:
+            conn.send(cmd.encode())
+            print(cmd)
 
 
 #####   CODE STARTS HERE   #####

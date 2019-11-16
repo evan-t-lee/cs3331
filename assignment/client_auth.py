@@ -1,8 +1,8 @@
-def username(socket, receiver):
+def username(socket):
     while True:
-        username = input("> Username: ")
+        username = input("Username: ")
 
-        socket.sendto(username.encode(), receiver)
+        socket.send(username.encode())
         # wait for the reply from the server
         data, address = socket.recvfrom(2048)
         data = data.decode()
@@ -15,11 +15,11 @@ def username(socket, receiver):
         if status == 'status 40':
             return False
 
-def password(socket, receiver):
+def password(socket):
     while True:
-        username = input("> Password: ")
+        username = input("Password: ")
 
-        socket.sendto(username.encode(), receiver)
+        socket.send(username.encode())
         # wait for the reply from the server
         data, address = socket.recvfrom(2048)
         data = data.decode()

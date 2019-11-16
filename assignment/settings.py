@@ -33,15 +33,15 @@ def server_init(port, block_duration, timeout):
     t_lock = threading.Condition()
 
     # we will use two sockets, one for sending and one for receiving
-    global serverSocket
-    serverSocket = socket(AF_INET, SOCK_STREAM)
+    global recv_socket
+    recv_socket = socket(AF_INET, SOCK_STREAM)
 
-    serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    serverSocket.bind(('localhost', PORT))
-    serverSocket.listen(1)
+    recv_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    recv_socket.bind(('localhost', PORT))
+    recv_socket.listen(1)
 
-    global clientSocket
-    clientSocket = socket(AF_INET, SOCK_STREAM)
+    global send_socket
+    send_socket = socket(AF_INET, SOCK_STREAM)
 
 def data_init():
     global credentials
