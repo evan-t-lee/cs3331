@@ -1,33 +1,33 @@
 def username(socket):
     while True:
         username = input("Username: ")
+        data = f"request 10:{username}"
+        socket.send(data.encode())
 
-        socket.send(username.encode())
         # wait for the reply from the server
-        data, address = socket.recvfrom(2048)
-        data = data.decode()
-        status, message = data.split(':')
-        if status == 'status 20':
-            return True
+        data = socket.recv(2048).decode()
+        code, message = data.split(':')
+        if code == 'response 20':
+            return username
 
         print(message)
 
-        if status == 'status 40':
+        if code == 'response 40':
             return False
 
 def password(socket):
     while True:
-        username = input("Password: ")
+        password = input("Password: ")
+        data = f"request 11:{password}"
+        socket.send(data.encode())
 
-        socket.send(username.encode())
         # wait for the reply from the server
-        data, address = socket.recvfrom(2048)
-        data = data.decode()
-        status, message = data.split(':')
-        if status == 'status 21':
+        data = socket.recv(2048).decode()
+        code, response = data.split(':')
+        if code == 'response 21':
             return True
 
-        print(message)
+        print(response)
 
-        if status == 'status 40':
+        if code == 'response 40':
             return False

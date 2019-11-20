@@ -16,6 +16,19 @@ def create_user():
         'blacklisted': False
     }
 
+def data_init():
+    global credentials
+    credentials = get_credentials()
+
+    global users
+    users = {username:create_user() for username in credentials}
+
+    global online_users
+    online_users = {}
+
+    global auth_conns
+    auth_conns = {}
+
 def server_init(port, block_duration, timeout):
     global UPDATE_INTERVAL
     UPDATE_INTERVAL = 1
@@ -42,13 +55,3 @@ def server_init(port, block_duration, timeout):
 
     global send_socket
     send_socket = socket(AF_INET, SOCK_STREAM)
-
-def data_init():
-    global credentials
-    credentials = get_credentials()
-
-    global users
-    users = {username:create_user() for username in credentials}
-
-    global online_users
-    online_users = {}
