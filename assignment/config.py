@@ -1,5 +1,6 @@
-from socket import *
-import threading
+# library imports
+from threading import Conditio
+import socket
 
 def get_credentials():
     credentials = {}
@@ -30,9 +31,6 @@ def data_init():
     auth_conns = {}
 
 def server_init(port, block_duration, timeout):
-    global UPDATE_INTERVAL
-    UPDATE_INTERVAL = 1
-
     global PORT
     PORT = int(port)
 
@@ -43,15 +41,11 @@ def server_init(port, block_duration, timeout):
     TIMEOUT = int(timeout)
 
     global t_lock
-    t_lock = threading.Condition()
+    t_lock = Condition()
 
-    # we will use two sockets, one for sending and one for receiving
     global recv_socket
-    recv_socket = socket(AF_INET, SOCK_STREAM)
+    recv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    recv_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     recv_socket.bind(('localhost', PORT))
     recv_socket.listen(1)
-
-    global send_socket
-    send_socket = socket(AF_INET, SOCK_STREAM)

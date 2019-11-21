@@ -1,57 +1,24 @@
-#Python 3
-#Usage: python3 UDPClient3.py localhost 12000
-#coding: utf-8
-
-# python client.py server_IP server_port
-
-import select
-from socket import *
+# library imports
+from select import select
+import socket
 import sys
 import threading
 import time
-
+# local file imports
 import client_auth as auth
 
 # constants
 MAX_USERS = 10000
 
-# setup client to connect with server
-ip, port = sys.argv[1], int(sys.argv[2])
-client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect((ip, port))
-assigned_port = int(client_socket.recv(2048).decode())
-
-# authenticate with server
-username = auth.username(client_socket, assigned_port)
-if not username:
-    client_socket.close()
-    exit()
-if not auth.password(client_socket, assigned_port):
-    client_socket.close()
-    exit()
-
-# setup socket to connect with peers
-p2p_socket = socket(AF_INET, SOCK_STREAM)
-p2p_socket.bind((ip, assigned_port + MAX_USERS))
-p2p_socket.listen(1)
-
-# global data
-connections = {'!p2p': {'recv': p2p_socket}}
-socket_store = None
-logged_in = True
-
 def recv_handler():
-    global logged_in
-
     while True:
         data = client_socket.recv(2048).decode()
-
         code, response = data.split(':', 1)
 
+        # logout request
         if code == 'response 22':
-            print(f'> {response} < <')
-            logged_in = False
-            return
+            logout(response)
+            break
 
         # server message
         if code.startswith('response 1'):
@@ -65,20 +32,22 @@ def recv_handler():
 
 def send_handler():
     while True:
-        cmd = input('> ')
-        if cmd.startswith('private '):
+        command = input('> ')
+        # send private message
+        if command.startswith('private '):
             try:
-                user, message = cmd.split(' ', 2)[1:]
+                user, message = command.split(' ', 2)[1:]
                 if connections.get(user):
                     data = f'private 10:{username} (private): {message}'
                     connections[user]['send'].send(data.encode())
                 else:
                     print(f'> > Error. Private messaging to {user} not enabled < <')
             except ValueError:
-                print('> > Error. Usage of private is: private user message < <')
-        elif cmd.startswith('stopprivate '):
+                print('> > Error. Invalid usage of private < <')
+        # stop private messaging
+        elif command.startswith('stopprivate '):
             try:
-                user = cmd.split(' ', 1)[1]
+                user = command.split(' ', 1)[1]
                 if connections.get(user):
                     data = f'private 11:{username}'
                     connections[user]['send'].send(data.encode())
@@ -87,9 +56,10 @@ def send_handler():
                 else:
                     print(f'> > Error. There is no private with {user} to stop < <')
             except ValueError:
-                print('> > Error. Usage of stopprivate is: stopprivate user < <')
+                print('> > Error. Invalid usage of stopprivate < <')
+        # send server command
         else:
-            data = f'request 20:{username}:{cmd}'
+            data = f'request 20:{username}:{command}'
             client_socket.send(data.encode())
 
 def p2p_handler():
@@ -97,9 +67,10 @@ def p2p_handler():
 
     while True:
         recv_conns = [conn['recv'] for conn in connections.values()]
-        read_sockets = select.select(recv_conns, [], [])[0]
+        read_sockets = select(recv_conns, [], [])[0]
 
         for socket in read_sockets:
+            # handle new peer connection
             if socket == p2p_socket:
                 peer_conn, peer_addr = p2p_socket.accept()
                 data = peer_conn.recv(2048).decode()
@@ -112,9 +83,10 @@ def p2p_handler():
                     }
                 else:
                     p2p_setup_recv(peer_conn, data)
+            # peer sent data
             else:
                 data = socket.recv(2048).decode()
-
+                # force logout
                 if not data:
                     for user in connections:
                         if connections[user] == socket:
@@ -123,8 +95,10 @@ def p2p_handler():
                     continue
 
                 code, response = data.split(':', 1)
+                # data was message
                 if code == 'private 10':
                     print(f'> {response} < <\n> ', end='')
+                # data was stop request
                 elif code == 'private 11':
                     message = f'Private messaging with {response} has been stopped'
                     print(f'> {message} < <\n> ', end='')
@@ -159,24 +133,56 @@ def p2p_setup_send(data):
 
 def p2p_setup_port(ip, port):
     peer_port = int(port) + MAX_USERS
-    peer_socket = socket(AF_INET, SOCK_STREAM)
+    peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     peer_socket.connect((ip, peer_port))
     return peer_socket
 
-recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
-recv_thread.daemon = True
-recv_thread.start()
+def logout(message):
+    global connections
 
-send_thread = threading.Thread(name='SendHandler', target=send_handler)
-send_thread.daemon = True
-send_thread.start()
+    data = f'private 11:{username}'
+    for user in [*connections.keys()]:
+        if user != '!p2p':
+            connections[user]['send'].send(data.encode())
+            del connections[user]
+    print(f'> {message} < <')
+    client_socket.close()
+    p2p_socket.close()
 
-p2p_thread = threading.Thread(name='p2pHandler', target=p2p_handler)
-p2p_thread.daemon = True
-p2p_thread.start()
 
-while logged_in:
-    time.sleep(0.1)
+if __name__ == '__main__':
+    # setup client to connect with server
+    ip, port = sys.argv[1], int(sys.argv[2])
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((ip, port))
+    assigned_port = int(client_socket.recv(2048).decode())
 
-client_socket.close()
-p2p_socket.close()
+    # authenticate with server
+    username = auth.username(client_socket, assigned_port)
+    if not username:
+        client_socket.close()
+        exit()
+    if not auth.password(client_socket, assigned_port):
+        client_socket.close()
+        exit()
+
+    # setup socket to connect with peers
+    p2p_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    p2p_socket.bind((ip, assigned_port + MAX_USERS))
+    p2p_socket.listen(1)
+
+    # global data
+    connections = {'!p2p': {'recv': p2p_socket}}
+    socket_store = None
+
+    # start main recieving thread
+    recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
+    recv_thread.start()
+
+    send_thread = threading.Thread(name='SendHandler', target=send_handler)
+    send_thread.daemon = True
+    send_thread.start()
+
+    p2p_thread = threading.Thread(name='p2pHandler', target=p2p_handler)
+    p2p_thread.daemon = True
+    p2p_thread.start()

@@ -1,11 +1,9 @@
-# python server.py server_port block_duration timeout
-
-import select
-from socket import *
+# library imports
+from select import select
 import sys
 import threading
 import time
-
+# local file imports
 import config
 import server_auth as auth
 import server_commands as command
@@ -15,29 +13,23 @@ def recv_handler():
 
     while True:
         with config.t_lock:
-            # Get the list sockets which are ready to be read through select
-            connections = [config.recv_socket] +\
-                [conn['conn'] for conn in config.auth_conns.values()] +\
-                [user['conn'] for user in config.online_users.values()]
+            connections = [config.recv_socket] + [*config.online_users.values()] +\
+                [conn['conn'] for conn in config.auth_conns.values()]
                 
-            read_sockets = select.select(connections, [], [])[0]
+            read_sockets = select(connections, [], [])[0]
 
             for socket in read_sockets:
-                # print('Changed:', socket, '\n')
-
-                # New connection
+                # handle new client connection
                 if socket == config.recv_socket:
                     conn, addr = config.recv_socket.accept()
                     conn_handler(conn, addr)
-                # Some incoming message from a client
+                # client sent data
                 else:
-                    # Data recieved from client, process it
                     data = socket.recv(2048).decode()
-
-                    # Force logout
+                    # force logout
                     if not data:
                         for user in config.online_users:
-                            if socket == config.online_users[user]['conn']:
+                            if socket == config.online_users[user]:
                                 command.broadcast('!user', f'{user} has logged out')
                                 del config.online_users[user]
                                 break
@@ -51,7 +43,6 @@ def recv_handler():
             config.t_lock.notify()
 
 def conn_handler(conn, addr):
-    print(addr)
     with config.t_lock:
         client_port = str(addr[1])
         conn.send(client_port.encode())
@@ -62,15 +53,32 @@ def conn_handler(conn, addr):
         }
         config.t_lock.notify
 
-#####   CODE STARTS HERE   #####
+def timeout_handler():
+    while True:
+        curr_time = int(time.time())
+        timed_out_users = []
+        for user in config.online_users.keys():
+            if curr_time - config.users[user]['last_active'] > config.TIMEOUT:
+                timed_out_users.append(user)
 
-config.data_init()
-config.server_init(sys.argv[1], sys.argv[2], sys.argv[3])
+        for user in timed_out_users:
+            data = 'response 22:You have timed out'
+            config.online_users[user].send(data.encode())
+            command.broadcast(f'!{user}', f'{user} has timed out')
+            del config.online_users[user]
 
-recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
-recv_thread.daemon = True
-recv_thread.start()
+        # As we use integers for time, check every second
+        time.sleep(1)
 
-# this is the main thread
-while True:
-    time.sleep(0.1)
+
+if __name__ == '__main__':
+    config.data_init()
+    config.server_init(sys.argv[1], sys.argv[2], sys.argv[3])
+
+    # start main recieving thread
+    recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
+    recv_thread.start()
+
+    timeout_thread = threading.Thread(name='TimeoutHandler', target=timeout_handler)
+    timeout_thread.daemon = True
+    timeout_thread.start()

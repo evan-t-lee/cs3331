@@ -1,15 +1,11 @@
-import threading
+# library imports
 import time
+# local file imports
 import config
 import server_commands as command
 
 def handler(data):
     code, port, request = data.split(':')
-
-    # print('Online users:')
-    # for item in config.online_users:
-    #     print(item, config.online_users[item])
-
     conn = config.auth_conns[port]['conn']
     if code == 'request 10':
         response = auth_username(port, request)
@@ -27,7 +23,6 @@ def handler(data):
             auth_blacklist(port)
 
 def auth_username(port, username):
-    # get lock as we might me accessing some shared data structures
     if username in config.credentials:
         if config.users[username]['blacklisted']:
             data = 'response 40:Your account is blocked due to multiple login failures. Please try again later'
@@ -61,10 +56,7 @@ def auth_login(port):
 
     config.users[username]['last_active'] = curr_time
 
-    config.online_users[username] = {
-        'conn': conn,
-        'last_active': curr_time
-    }
+    config.online_users[username] = conn
 
     command.broadcast(f'!{username}', f'{username} has logged in')
 

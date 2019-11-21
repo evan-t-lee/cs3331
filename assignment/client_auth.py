@@ -4,7 +4,7 @@ def username(socket, port):
         data = f"request 10:{port}:{username}"
         socket.send(data.encode())
 
-        # wait for the reply from the server
+        # confirm whether valid username
         data = socket.recv(2048).decode()
         code, message = data.split(':')
         if code == 'response 20':
@@ -21,13 +21,16 @@ def password(socket, port):
         data = f"request 11:{port}:{password}"
         socket.send(data.encode())
 
-        # wait for the reply from the server
+        # confirm whether authenticated
         data = socket.recv(2048).decode()
         code, response = data.split(':')
+
+        # authenticated
         if code == 'response 21':
             return True
 
         print(response)
 
+        # blocked
         if code == 'response 40':
             return False
