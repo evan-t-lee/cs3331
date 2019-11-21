@@ -13,16 +13,18 @@ import client_auth as auth
 
 # Server would be running on the same host as Client
 ip = sys.argv[1]
-port= int(sys.argv[2])
+port = int(sys.argv[2])
 
 send_socket = socket(AF_INET, SOCK_STREAM)
 send_socket.connect((ip, port))
 
-username = auth.username(send_socket)
+assigned_port = send_socket.recv(2048).decode()
+
+username = auth.username(send_socket, assigned_port)
 if not username:
     send_socket.close()
     exit()
-if not auth.password(send_socket):
+if not auth.password(send_socket, assigned_port):
     send_socket.close()
     exit()
 
@@ -35,17 +37,17 @@ def recv_handler():
         data = data.decode()
         code, response = data.split(':', 1)
         if code == 'response 22':
-            print('logging out')
+            print(f'- {response} -')
             logged_in = False
             return
         elif code == 'response 10':
-            print(f'{response}\n> ', end='')
+            print(f'- {response} -\n> ', end='')
 
 def send_handler():
     while True:
         cmd = input('> ')
         if cmd:
-            message = f'{username}:{cmd}'
+            message = f'request 20:{username}:{cmd}'
             send_socket.send(message.encode())
 
 

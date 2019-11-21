@@ -10,8 +10,8 @@ def get_credentials():
 
 def create_user():
     return {
-        'socket': None,
         'mail': [],
+        'last_active': 0,
         'blocked_users': [],
         'blacklisted': False
     }

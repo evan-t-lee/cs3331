@@ -1,7 +1,7 @@
-def username(socket):
+def username(socket, port):
     while True:
         username = input("Username: ")
-        data = f"request 10:{username}"
+        data = f"request 10:{port}:{username}"
         socket.send(data.encode())
 
         # wait for the reply from the server
@@ -15,10 +15,10 @@ def username(socket):
         if code == 'response 40':
             return False
 
-def password(socket):
+def password(socket, port):
     while True:
         password = input("Password: ")
-        data = f"request 11:{password}"
+        data = f"request 11:{port}:{password}"
         socket.send(data.encode())
 
         # wait for the reply from the server

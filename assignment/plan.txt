@@ -2,6 +2,7 @@
 users = {
     user1: {
         mail: [],
+        last_active: float,
         blocked: [client2],
         is_blocked: bool
     },
@@ -16,8 +17,7 @@ users = {
 online_users = {
     username: {
         conn: socket,
-        time_logged_in: float,
-        last_active: bool
+        last_active: float
     }
 }
 
@@ -40,6 +40,7 @@ status_codes:
     30: invalid username
     31: invalid authentication
     40: blocked user
+    41: already login
 
 request_codes:
     10: username
