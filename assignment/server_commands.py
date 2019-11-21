@@ -32,6 +32,10 @@ def message(sender, data):
     except ValueError:
         raise TypeError from None
 
+    message = message.strip()
+    if not message:
+        raise TypeError
+
     if not config.users.get(user):
         data = f'response 12:Error. User {user} does not exist'
     elif sender == user:
