@@ -175,13 +175,14 @@ if __name__ == '__main__':
     connections = {'!p2p': {'recv': p2p_socket}}
     socket_store = None
 
+    send_thread = threading.Thread(name='SendHandler', target=send_handler)
+    send_thread.daemon = True
+    send_thread.start()
+
     # start main recieving thread
     recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
     recv_thread.start()
 
-    send_thread = threading.Thread(name='SendHandler', target=send_handler)
-    send_thread.daemon = True
-    send_thread.start()
 
     p2p_thread = threading.Thread(name='p2pHandler', target=p2p_handler)
     p2p_thread.daemon = True

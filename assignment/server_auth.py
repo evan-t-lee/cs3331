@@ -55,14 +55,14 @@ def auth_login(port):
     curr_time = int(time.time())
 
     config.users[username]['last_active'] = curr_time
-
     config.online_users[username] = conn
 
     command.broadcast(f'!{username}', f'{username} has logged in')
 
     for message in config.users[username]['mail']:
-        print(message)
         conn.send(message.encode())
+        # allow client to receive each message before next is sent
+        time.sleep(0.1)
 
     config.users[username]['mail'] = []
 

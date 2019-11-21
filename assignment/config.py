@@ -1,5 +1,5 @@
 # library imports
-from threading import Conditio
+from threading import Condition
 import socket
 
 def get_credentials():
