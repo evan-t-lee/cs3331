@@ -1,94 +1,84 @@
-# Sample code for Multi-Threaded Server
-# Python 3
-# Usage: python3 UDPserver3.py
-# coding: utf-8
-
-# python server.py server_port block_duration timeout
-
-from socket import *
+# library imports
+from select import select
+import sys
 import threading
 import time
-import datetime as dt
-
-# Server will run on this port
-serverPort = 12000
-t_lock=threading.Condition()
-# will store clients info in this list
-clients=[]
-# would communicate with clients after every second
-UPDATE_INTERVAL= 1
-timeout=False
-
+# local file imports
+import config
+import server_auth as auth
+import server_commands as command
 
 def recv_handler():
-    global t_lock
-    global clients
-    global clientSocket
-    global serverSocket
     print('Server is ready for service')
-    while(1):
-        
-        data, clientAddress = serverSocket.recvfrom(2048)
-        # received data from the client, now we know who we are talking with
-        username = message.decode()
-        # get lock as we might me accessing some shared data structures
-        with t_lock:
-            currtime = dt.datetime.now()
-            date_time = currtime.strftime("%d/%m/%Y, %H:%M:%S")
-            print('Received request from', , username, clientAddress[0], 'listening at', clientAddress[1], ':',  'at time ', date_time)
-            if username in:
-                # store client information (IP and Port No) in list
-                clients.append(clientAddress)
-                serverMessage="Subscription successfull"
-            elif(message=='Unsubscribe'):
-                # check if client already subscribed or not
-                if(clientAddress in clients):
-                    clients.remove(clientAddress)
-                    serverMessage="Subscription removed"
+
+    while True:
+        with config.t_lock:
+            connections = [config.recv_socket] + [*config.online_users.values()] +\
+                [conn['conn'] for conn in config.auth_conns.values()]
+                
+            read_sockets = select(connections, [], [])[0]
+
+            for socket in read_sockets:
+                # handle new client connection
+                if socket == config.recv_socket:
+                    conn, addr = config.recv_socket.accept()
+                    conn_handler(conn, addr)
+                # client sent data
                 else:
-                    serverMessage="You are not currently subscribed"
-            else:
-                serverMessage="Unknown command, send Subscribe or Unsubscribe only"
-            # send message to the client
-            serverSocket.sendto(serverMessage.encode(), clientAddress)
-            # notify the thread waiting
-            t_lock.notify()
+                    data = socket.recv(2048).decode()
+                    # force logout
+                    if not data:
+                        for user in config.online_users:
+                            if socket == config.online_users[user]:
+                                command.broadcast('!user', f'{user} has logged out')
+                                del config.online_users[user]
+                                break
+                        continue
+
+                    if data.startswith('request 1'):
+                        auth.handler(data)
+                    elif data.startswith('request 20'):
+                        command.handler(data)
+
+            config.t_lock.notify()
+
+def conn_handler(conn, addr):
+    with config.t_lock:
+        client_port = str(addr[1])
+        conn.send(client_port.encode())
+        config.auth_conns[client_port] = {
+            'conn': conn,
+            'username': None,
+            'attempts': 0
+        }
+        config.t_lock.notify
+
+def timeout_handler():
+    while True:
+        curr_time = int(time.time())
+        timed_out_users = []
+        for user in config.online_users.keys():
+            if curr_time - config.users[user]['last_active'] > config.TIMEOUT:
+                timed_out_users.append(user)
+
+        for user in timed_out_users:
+            data = 'response 22:You have timed out'
+            config.online_users[user].send(data.encode())
+            command.broadcast(f'!{user}', f'{user} has timed out')
+            del config.online_users[user]
+
+        # As we use integers for time, check every second
+        time.sleep(1)
 
 
-def send_handler():
-    global t_lock
-    global clients
-    global clientSocket
-    global serverSocket
-    global timeout
-    # go through the list of the subscribed clients and send them the current time after every 1 second
-    while(1):
-        # get lock
-        with t_lock:
-            for i in clients:
-                currtime =dt.datetime.now()
-                date_time = currtime.strftime("%d/%m/%Y, %H:%M:%S")
-                message='Current time is ' + date_time
-                clientSocket.sendto(message.encode(), i)
-                print('Sending time to', i[0], 'listening at', i[1], 'at time ', date_time)
-            # notify other thread
-            t_lock.notify()
-        # sleep for UPDATE_INTERVAL
-        time.sleep(UPDATE_INTERVAL)
+if __name__ == '__main__':
+    config.data_init()
+    config.server_init(sys.argv[1], sys.argv[2], sys.argv[3])
 
-# we will use two sockets, one for sending and one for receiving
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-serverSocket.bind(('localhost', serverPort))
+    # start main recieving thread
+    recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
+    recv_thread.start()
 
-recv_thread=threading.Thread(name="RecvHandler", target=recv_handler)
-recv_thread.daemon=True
-recv_thread.start()
-
-send_thread=threading.Thread(name="SendHandler",target=send_handler)
-send_thread.daemon=True
-send_thread.start()
-# this is the main thread
-while True:
-    time.sleep(0.1)
+    timeout_thread = threading.Thread(name='TimeoutHandler', target=timeout_handler)
+    timeout_thread.daemon = True
+    timeout_thread.start()

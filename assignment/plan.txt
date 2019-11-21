@@ -1,0 +1,51 @@
+# only logged in clients
+users = {
+    user1: {
+        mail: [],
+        last_active: float,
+        blocked: [client2],
+        is_blocked: bool
+    },
+    user2: {
+        mail: [],
+        blocked: [],
+        is_blocked: bool
+    },
+    ...
+}
+
+online_users = {
+    username: {
+        conn: socket,
+        last_active: float
+    }
+}
+
+credentials = {
+    username: password
+}
+
+def timeout():
+    inactive = [client for client in clients if is_inactive(client)]
+    for client in inactive:
+        logout(client)
+
+active_clients
+
+response_codes:
+    10: ok response
+    11: ok no response
+    12: invalid action
+    20: valid username
+    21: login
+    22: logout
+    30: invalid username
+    31: invalid authentication
+    40: blocked user
+    41: already login
+    50: start private
+
+request_codes:
+    10: username
+    11: password
+    20: command
