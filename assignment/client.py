@@ -159,10 +159,7 @@ if __name__ == '__main__':
 
     # authenticate with server
     username = auth.username(client_socket, assigned_port)
-    if not username:
-        client_socket.close()
-        exit()
-    if not auth.password(client_socket, assigned_port):
+    if not username and not auth.password(client_socket, assigned_port):
         client_socket.close()
         exit()
 
@@ -182,7 +179,6 @@ if __name__ == '__main__':
     # start main recieving thread
     recv_thread = threading.Thread(name='RecvHandler', target=recv_handler)
     recv_thread.start()
-
 
     p2p_thread = threading.Thread(name='p2pHandler', target=p2p_handler)
     p2p_thread.daemon = True
