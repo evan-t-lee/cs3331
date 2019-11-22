@@ -23,18 +23,17 @@ def handler(data):
             auth_blacklist(port)
 
 def auth_username(port, username):
-    if username in config.credentials:
-        if config.users[username]['blacklisted']:
-            data = 'response 40:Your account is blocked due to multiple login failures. Please try again later'
-            del config.auth_conns[port]
-        elif config.online_users.get(username):
-            data = 'response 41:Your account is already logged in'
-        else:
-            data = 'response 20:'
-            config.auth_conns[port]['username'] = username
+    if not config.credentials.get(username):
+        return 'response 30:Invalid Username. Please try again'
+    
+    if config.users[username]['blacklisted']:
+        data = 'response 40:Your account is blocked due to multiple login failures. Please try again later'
+        del config.auth_conns[port]
+    elif config.online_users.get(username):
+        data = 'response 41:Your account is already logged in'
     else:
-        data = 'response 30:Invalid Username. Please try again'
-
+        data = 'response 20:'
+        config.auth_conns[port]['username'] = username
     return data
 
 def auth_password(port, password):
