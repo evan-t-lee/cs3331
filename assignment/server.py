@@ -9,7 +9,8 @@ import server_auth as auth
 import server_commands as command
 
 def recv_handler():
-    print('Server is ready for service')
+    # indicate that server was setup successfully and is running
+    # print('Server is ready for service')
 
     while True:
         with config.t_lock:
@@ -69,7 +70,6 @@ def timeout_handler():
 
         # As we use integers for time, check every second
         time.sleep(1)
-
 
 if __name__ == '__main__':
     config.data_init()
